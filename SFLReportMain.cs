@@ -209,11 +209,11 @@ namespace BK_Tool
                             if (strRange.IndexOf("-") >= 0)
                             {
                                 string[] strRangeList = strRange.Split('-');
-                                if (float.Parse(strRangeList[0]) < float.Parse(strResult))
+                                if (float.Parse(strRangeList[0]) > float.Parse(strResult))
                                 {
                                     strResultflg = "↓";//↓↑
                                 }
-                                else if (float.Parse(strRangeList[0]) < float.Parse(strResult))
+                                else if (float.Parse(strRangeList[1]) < float.Parse(strResult))
                                 {
                                     strResultflg = "↑";//↓↑
                                 }

@@ -23,6 +23,7 @@ namespace BK_Tool
 
         public SockectComm()
         {
+            if (tcpServer != null) { tcpServer = null; }
             tcpServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             IPAddress ipaddress = IPAddress.Parse(IpString);
             EndPoint point = new IPEndPoint(ipaddress, int.Parse(PortString));

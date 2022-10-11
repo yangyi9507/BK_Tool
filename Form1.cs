@@ -27,7 +27,9 @@ namespace BK_Tool
         #region 特定蛋白接口
         private void button2_Click(object sender, EventArgs e)
         {
+            TDDBReportMain f = new TDDBReportMain();
 
+            f.ShowDialog();
         }
         #endregion
 
