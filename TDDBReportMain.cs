@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,6 +52,10 @@ namespace BK_Tool
             InitializeComponent();
         }
 
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            SockectComm sockectComm = new SockectComm();
+        }
 
         #region 对截取到的合格拼接串进行HL7协议处理
         /// <summary>
@@ -63,12 +68,22 @@ namespace BK_Tool
             bool IsUpdate = false;
             strKey = DateTime.Now.ToString("yyyyMMddhhmmss");//报告单号
 
-            Maticsoft.Model.report_main report_main = new Maticsoft.Model.report_main();
-            Maticsoft.DAL.report_main report_mainDal = new Maticsoft.DAL.report_main();
-            Maticsoft.Model.report_detail report_detail1 = new Maticsoft.Model.report_detail();
-            Maticsoft.DAL.report_detail report_detailDal = new Maticsoft.DAL.report_detail();
-            report_main.ReportID = strKey;
+            outPutAnaly(strKey, "----解析开始----");
+            outPutAnaly("", ib_data);
 
+
+
+            Maticsoft.Model.report_main_unaudit report_main_unaudit = new Maticsoft.Model.report_main_unaudit();
+            Maticsoft.DAL.report_main_unaudit report_main_unauditDal = new Maticsoft.DAL.report_main_unaudit();
+            Maticsoft.Model.report_detail_undudit report_detail1_unaudit = new Maticsoft.Model.report_detail_undudit();
+            Maticsoft.DAL.report_detail_undudit report_detailDal_unauditDal = new Maticsoft.DAL.report_detail_undudit();
+
+            Maticsoft.Model.samplemain samplemain = new Maticsoft.Model.samplemain();
+            Maticsoft.DAL.samplemain samplemainDal = new Maticsoft.DAL.samplemain();
+
+            report_main_unaudit.KeyNo_Group = strKey;
+            report_main_unaudit.REPORT_ID = strKey;
+            report_main_unaudit.INSTRUMENT = "TDDB";
             #region 对合格串进行解析
             string[] arrayData = ib_data.Split('\r');
             for (int i = 0; i < arrayData.Length - 1; i++)
@@ -78,26 +93,35 @@ namespace BK_Tool
                 {
                     #region 消息段包含病人的基本信息
                     case "PID":
-                        //PID|1||05012006^^^^MR||^张三||19991001000000|男
-                        CaseNo = arrayLine[3].ToString();//病例号码
-                        bedNo = arrayLine[4].ToString();//床号
-                        patName = arrayLine[5].ToString();//病人的姓名
-                        patBirthday = common.IsNullCheck(arrayLine[7].ToString());//出生年月
+                        //PID|3731|||||||M|||||||||||||||||1||||||
+                        report_main_unaudit.PAT_IN_HOS_ID = arrayLine[2].ToString();
+                        report_main_unaudit.PAT_NO = arrayLine[3].ToString();
+                        report_main_unaudit.BED = arrayLine[4].ToString();
+                        report_main_unaudit.PAT_NAME = arrayLine[5].ToString();
+                        if (arrayLine[6].ToString() != "") 
+                        {
+                            report_main_unaudit.PAT_DEPTName = arrayLine[6].ToString().Split('^')[0];
+                            report_main_unaudit.ROOM = arrayLine[6].ToString().Split('^')[1];
+                        }
+                        report_main_unaudit.PAT_Birthday = common.IsNullCheck(arrayLine[7].ToString()).ToString("G");
                         patSex = arrayLine[8].ToString();//性别
+                        if (patSex == "M") { report_main_unaudit.PAT_SEX = "男"; } else if (patSex == "F") { report_main_unaudit.PAT_SEX = "女"; } else { report_main_unaudit.PAT_SEX = "未知"; }
+                        report_main_unaudit.BloodType = arrayLine[9].ToString();
+                        report_main_unaudit.Address = arrayLine[11].ToString();
+                        report_main_unaudit.Telephone = arrayLine[13].ToString();
+                        report_main_unaudit.DocMemo = arrayLine[26].ToString();
+                        report_main_unaudit.PAT_AGE = common.GetAge(common.IsNullCheck(arrayLine[7].ToString()), DateTime.Now).Split('|')[0];
+                        report_main_unaudit.PAT_AGEUnit = common.GetAge(common.IsNullCheck(arrayLine[7].ToString()), DateTime.Now).Split('|')[1];
 
-                        address = arrayLine[11].ToString();//地址
-                        telephone = arrayLine[13].ToString();//电话
-
-                        report_main.PatId = CaseNo;
-                        report_main.BedNo = bedNo;
-                        report_main.PatAge = common.GetAge(patBirthday, DateTime.Now);                        
-                        report_main.PatName = patName;
-                        report_main.PatBirthday = patBirthday.ToString("G");
-                        report_main.Address = address;
-                        report_main.TelePhone = telephone;
-                        report_main.Demo = arrayLine[26].ToString();//备注
-                        
-                        if (patSex == "M") { report_main.PatSex = "男"; } else if (patSex == "F") { report_main.PatSex = "女"; } else { report_main.PatSex = "未知"; }
+                        outPutAnaly("患者ID", report_main_unaudit.PAT_IN_HOS_ID);
+                        outPutAnaly("床号", report_main_unaudit.BED);
+                        outPutAnaly("年龄", report_main_unaudit.PAT_AGE);
+                        outPutAnaly("姓名", report_main_unaudit.PAT_NAME);
+                        outPutAnaly("生日", report_main_unaudit.PAT_Birthday);
+                        outPutAnaly("地址", report_main_unaudit.Address);
+                        outPutAnaly("电话", report_main_unaudit.Telephone);
+                        outPutAnaly("备注", report_main_unaudit.DocMemo);
+                        outPutAnaly("性别", report_main_unaudit.PAT_SEX);                        
 
                         break;
                     #endregion
@@ -137,38 +161,87 @@ namespace BK_Tool
                     #region 主要包含检验报告单信息
                     case "OBR":
 
-                        //OBR|1||6-968|01001^99MRC|||2022-06-15 15:52:41|||李佩||||||||||||||HM||||||||produce\r
-                        report_main.Barcode = arrayLine[2].ToString();//样本条码号                        
-                        report_main.SampleNo = arrayLine[3].ToString();
-                        
-                        CollectTime = common.IsNullCheck(arrayLine[6].ToString());//采样时间
-                        report_main.SendTime = CollectTime.ToString(("G"));
-                        TestTime = common.IsNullCheck(arrayLine[7].ToString());//检验时间
-                        report_main.SendTime = TestTime.ToString(("G"));
+                        //OBR|3731|Invalid0056|3731|BIOBASE^BK-PA120|N|20221012171000|20220921200943||||||||1|||0||||20221012171000||||||||||||||||||||||||||
 
 
 
-                        report_main.SendDocName = arrayLine[10].ToString();//送检人员                        
-                        Diagion = arrayLine[13].ToString();//临床诊断
-                        RecieveTime = common.IsNullCheck(arrayLine[14].ToString());//接收时间
-                        report_main.RecieveTime = RecieveTime.ToString(("G"));
-                        SampleSource = arrayLine[15].ToString();//样本来源
-                        report_main.SampleType = SampleSource;
-                        report_main.SendDocName = arrayLine[16].ToString();//送检人员
-
-                        AuditTime = common.IsNullCheck(arrayLine[22].ToString());//审核时间
-                        report_main.TestTime = AuditTime.ToString(("G"));
-                        report_main.TestDocName = arrayLine[32].ToString();
-                        
-                        report_main.Diagnosis = Diagion;
-                        if (report_mainDal.ExistsByBarcode(report_main.Barcode))
+                        report_main_unaudit.BARCODE =  arrayLine[2].ToString();
+                        report_main_unaudit.SAMPLENO = arrayLine[3].ToString();
+                        if (arrayLine[3].ToString() == "Y")
                         {
-                            strKey = report_mainDal.QueryByBarcode(report_main.Barcode).Rows[0]["reportID"].ToString();
-                            report_main.ReportID = strKey;
-                            report_mainDal.Update(report_main);
+                            report_main_unaudit.FALG_Emergency = 1;
+                        }
+                        else { report_main_unaudit.FALG_Emergency = 0; }
+                        
+                        report_main_unaudit.BarcodeTime = common.IsNullCheck(arrayLine[6].ToString());
+                        
+                        report_main_unaudit.RegTime =common.IsNullCheck(arrayLine[7].ToString());
+
+                        
+                        report_main_unaudit.Diagnosis = arrayLine[13].ToString();
+
+                        report_main_unaudit.RegTime = common.IsNullCheck(arrayLine[14].ToString());
+                        if (arrayLine[15].ToString() != "") {
+                            if (arrayLine[15].ToString() == "1") { report_main_unaudit.SAMPLEType = "静脉血"; }
+                            else if (arrayLine[15].ToString() == "2") { report_main_unaudit.SAMPLEType = "预稀释"; }
+                            else if (arrayLine[15].ToString() == "3") { report_main_unaudit.SAMPLEType = "末梢血"; }
+                            else if (arrayLine[15].ToString() == "4") { report_main_unaudit.SAMPLEType = "血清"; }
+                        }
+                                                
+                        report_main_unaudit.Send_User = arrayLine[16].ToString();
+
+                        report_main_unaudit.DoctorName = arrayLine[20].ToString();
+                        report_main_unaudit.TEST_User = arrayLine[20].ToString();
+                        report_main_unaudit.PAT_DEPTName = arrayLine[21].ToString();
+                        report_main_unaudit.RptTypeID = 2;
+                        report_main_unaudit.REPORT_NAME = "特定蛋白";
+                        report_main_unaudit.INSTRUMENT = "TDDB";
+                        report_main_unaudit.REG_TYPE = 0;
+                        report_main_unaudit.CREATE_DATE = DateTime.Now;
+                        report_main_unaudit.OUT_PAT_ID = "-1";
+
+
+                        if (report_main_unauditDal.ExistsByBarcode(report_main_unaudit.BARCODE))
+                        {
+                            strKey = report_main_unauditDal.QueryByBarcode(report_main_unaudit.BARCODE).Rows[0]["REPORT_ID"].ToString();
+                            report_main_unaudit.REPORT_ID = strKey;
+                            report_main_unaudit.KeyNo_Group = strKey;
+                            report_main_unauditDal.Update(report_main_unaudit);
                             IsUpdate = true;
                         }
-                        else { report_mainDal.Add(report_main); }
+                        else { report_main_unauditDal.Add(report_main_unaudit); }
+
+
+                        samplemain.BARCODE = arrayLine[2].ToString();
+                        samplemain.CREAT_TIME = common.IsNullCheck(arrayLine[6].ToString());
+                        samplemain.EXAM_TIME = common.IsNullCheck(arrayLine[7].ToString());
+                        samplemain.COLLECT_USER_NAME = arrayLine[10].ToString();
+                        samplemain.COLLECT_USER_NAME = arrayLine[16].ToString();
+                        samplemain.CREAT_DEPT_NAME = arrayLine[17].ToString();
+                        samplemain.EXAM_OPERATOR_NAME = arrayLine[20].ToString();
+                        samplemain.RECEIVE_TIME = common.IsNullCheck(arrayLine[14].ToString());
+                        samplemain.EXAM_TIME = common.IsNullCheck(arrayLine[14].ToString());
+
+
+                        #region 样本信息补充
+                        samplemain.REPORT_TYPE = "2";
+                        samplemain.REPORT_NAME = "特定蛋白";
+                        samplemain.REG_TYPE = "0";
+                        samplemain.OUT_PAT_ID = "-1";
+                        samplemain.PAT_ID = "-1";
+                        samplemain.PAT_NAME = report_main_unaudit.PAT_NAME;
+                        samplemain.PAT_SEX = report_main_unaudit.PAT_SEX;
+                        samplemain.PAT_AGE = report_main_unaudit.PAT_AGE + report_main_unaudit.PAT_AGEUnit;
+                        samplemain.ROOM = report_main_unaudit.ROOM;
+                        samplemain.BED = report_main_unaudit.BED;
+                        samplemain.PAT_NO = report_main_unaudit.PAT_NO;
+
+                        #endregion
+                        if (samplemainDal.Exists(samplemain.BARCODE))
+                        {
+                            samplemainDal.Update(samplemain);
+                        }
+                        else { samplemainDal.Add(samplemain); }
 
                         break;
                     #endregion
@@ -211,12 +284,12 @@ namespace BK_Tool
 
                         //}
 
-                        //OBX|4658|NM|1|hs-CRP|0.77|mg/L|0.00-3.00|N|||F||0.77|20221009151049||||
+                        //OBX|5105|NM|2|SAA|5.00|mg/L|0.00-10.00|N|||F||5.00|20221012171000||||
                         strItemNo = arrayLine[3].Split('^')[0];
 
                         //当第三位为【NM】时，代表普通结果
                         if (arrayLine[2] == "NM")
-                        {
+                        {                             
                             strResult = arrayLine[5];
                             strUnits = arrayLine[6];
                             strRange = arrayLine[7];
@@ -251,15 +324,27 @@ namespace BK_Tool
                                 }
                             }
                             #endregion
-                            report_detail1.ReportID = strKey;
-                            report_detail1.Result = strResult;
-                            report_detail1.Units = strUnits;
-                            report_detail1.RefRange = strRange;
-                            report_detail1.Abnormal_Flg = strResultflg;
-                            report_detail1.ItemNo = strItemNo;
-                            report_detail1.ItemName = arrayLine[4];
+                            report_detail1_unaudit.REPORT_ID = strKey;
+                            report_detail1_unaudit.KeyNo_Group = strKey;
+                            report_detail1_unaudit.ITEM_ID = strItemNo;
+                            report_detail1_unaudit.RESULT = strResult;
+                            report_detail1_unaudit.UNIT = strUnits;
+                            report_detail1_unaudit.REFRANGE = strRange;
+                            report_detail1_unaudit.Abnormal_flg = strResultflg;                            
+                            report_detail1_unaudit.ITEM_NAME = arrayLine[4]; 
+                            report_detail1_unaudit.ITEM_ENAME = arrayLine[4]; 
+                            report_detail1_unaudit.RESLT_TIME = common.IsNullCheck(arrayLine[14].ToString());
 
-                            if (!IsUpdate) { report_detailDal.Add(report_detail1); }
+                            outPutAnaly("报告单号", strKey);
+                            outPutAnaly("项目编码", strItemNo);
+                            outPutAnaly("项目名称", arrayLine[4]);
+                            outPutAnaly("结果", strResult);
+                            outPutAnaly("单位", strUnits);
+                            outPutAnaly("参考范围", strRange);
+                            outPutAnaly("报警表示", strResultflg);
+
+
+                            if (!IsUpdate) { report_detailDal_unauditDal.Add(report_detail1_unaudit); }
                         }
                         break;
                     #endregion
@@ -271,11 +356,49 @@ namespace BK_Tool
         }
         #endregion
 
-        private void btnStart_Click_1(object sender, EventArgs e)
-        {
-            //SockectComm sockectComm = new SockectComm();
 
-            string str = "\vMSH|^~\\&|BIOBASE|BK-PA120|||20221009154449||ORU^R01|1579015008044584960|P|2.3.1||||0||ASCII||\rPID|3551|||||||M|||||||||||||||||1||||||\rOBR|3551|SAACA40018|3551|BIOBASE^BK-PA120|N|20221009151049|20220919160956||||||||1|||0||||20221009151049||||||||||||||||||||||||||\rOBX|4658|NM|1|hs-CRP|0.77|mg/L|0.00-3.00|N|||F||0.77|20221009151049||||\rOBX|4659|NM|2|SAA|5.00|mg/L|0.00-10.00|N|||F||5.00|20221009151049||||\rOBX|4660|NM|3|CRP|0.77|mg/L|0.00-10.00|N|||F||0.77|20221009151049||||\rOBX|4661|NM|4|SAA/hs-CRP|1.18|mg/L||N|||F||1.18|20221009151049||||\r\u001c\r";
+        public void outPutAnaly(string key, string log)
+        {
+            txtAnaly.AppendText(key + ":" + log + "\r\n");
+        }
+
+        public void outPut(int flg, string Key, string log)
+        {
+            if (flg == 0)
+            {
+                txtLog.AppendText("-----------------开始接收数据-----------------\r\n");
+            }
+            else
+            {
+                txtLog.AppendText(Key + ":" + log + "\r\n");
+            }
+
+            write(log);
+        }
+
+        public void write(string msg)
+        {
+            //获取当前程序目录
+            string logPath = Path.GetDirectoryName(Application.ExecutablePath);
+            //新建文件
+            System.IO.StreamWriter sw = System.IO.File.AppendText(logPath + "/" + DateTime.Now.ToString("yyyyMMdd") + ".txt");
+            //写入日志信息
+            sw.WriteLine(msg);
+            //关闭文件
+            sw.Close();
+            sw.Dispose();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            string str = "MSH|^~&|BIOBASE|BK-PA120|||20221012170100||ORU^R01|1580121344501223424|P|2.3.1||||0||ASCII||\r";
+            str += "PID|3731|||||||M|||||||||||||||||1||||||\r";
+            str += "OBR|3731|Invalid0056|3731|BIOBASE^BK-PA120|N|20221012171000|20220921200943||||||||1|||0||||20221012171000||||||||||||||||||||||||||\r";
+            str += "OBX|5104|NM|1|hs-CRP|0.77|mg/L|0.00-3.00|N|||F||0.77|20221012171000||||\r";
+            str += "OBX|5105|NM|2|SAA|5.00|mg/L|0.00-10.00|N|||F||5.00|20221012171000||||\r";
+            str += "OBX|5106|NM|3|CRP|0.77|mg/L|0.00-10.00|N|||F||0.77|20221012171000||||\r";
+            str += "OBX|5107|NM|4|SAA/hs-CRP|1.18|mg/L||N|||F||1.18|20221012171000||||\r";
+
             ChuLiOneHL7(str);
         }
     }

@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace BK_Tool
 {
@@ -20,8 +21,13 @@ namespace BK_Tool
         private static Socket clientSocket = null;
         public byte[] buffer = new byte[1024 * 1024 * 3];
         public static List<TcpClient> clientList = new List<TcpClient>();
-
+        
         public SockectComm()
+        {
+            Ini();
+        }
+
+        public void Ini()
         {
             if (tcpServer != null) { tcpServer = null; }
             tcpServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -30,12 +36,12 @@ namespace BK_Tool
 
             tcpServer.Bind(point);//绑定IP和申请端口
             tcpServer.Listen(100);//设置客户端最大连接数
+            //tcpServer.BeginAccept(new AsyncCallback(this.AsyncAcceptSocket), this);
             clientSocket = tcpServer.Accept();
 
             Console.WriteLine((clientSocket.RemoteEndPoint as IPEndPoint).Address + "已连接");
             clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallBack), this);
         }
-
 
         #region   接收数据
         /// <summary>
@@ -75,8 +81,6 @@ namespace BK_Tool
             }
         }
         #endregion
-
-
 
         #region 连接回调
         private void ConnectCallBack(IAsyncResult ar)

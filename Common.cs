@@ -135,19 +135,19 @@ namespace BK_Tool
             // 格式化年龄输出
             if (intYear >= 1) // 年份输出
             {
-                strAge = intYear.ToString() + "岁";
+                strAge = intYear.ToString() + "|岁";
             }
 
             if (intMonth > 0 && intYear <= 5) // 五岁以下可以输出月数
             {
-                strAge += intMonth.ToString() + "月";
+                strAge += intMonth.ToString() + "|月";
             }
 
             if (intDay >= 0 && intYear < 1) // 一岁以下可以输出天数
             {
                 if (strAge.Length == 0 || intDay > 0)
                 {
-                    strAge += intDay.ToString() + "日";
+                    strAge += intDay.ToString() + "|日";
                 }
             }
 

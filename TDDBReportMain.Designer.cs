@@ -34,6 +34,7 @@ namespace BK_Tool
             this.btnStart = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.txtLog = new System.Windows.Forms.TextBox();
+            this.button2 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // lblResolve
@@ -55,7 +56,6 @@ namespace BK_Tool
             this.txtAnaly.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtAnaly.Multiline = true;
             this.txtAnaly.Name = "txtAnaly";
-            this.txtAnaly.ReadOnly = true;
             this.txtAnaly.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.txtAnaly.Size = new System.Drawing.Size(710, 520);
             this.txtAnaly.TabIndex = 38;
@@ -69,7 +69,7 @@ namespace BK_Tool
             this.btnStart.TabIndex = 37;
             this.btnStart.Text = "启动服务";
             this.btnStart.UseVisualStyleBackColor = true;
-            this.btnStart.Click += new System.EventHandler(this.btnStart_Click_1);
+            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
             // 
             // label3
             // 
@@ -90,16 +90,27 @@ namespace BK_Tool
             this.txtLog.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
-            this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.txtLog.Size = new System.Drawing.Size(327, 520);
             this.txtLog.TabIndex = 35;
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(235, 27);
+            this.button2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(141, 62);
+            this.button2.TabIndex = 41;
+            this.button2.Text = "测试服务";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // TDDBReportMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1141, 706);
+            this.Controls.Add(this.button2);
             this.Controls.Add(this.lblResolve);
             this.Controls.Add(this.txtAnaly);
             this.Controls.Add(this.btnStart);
@@ -119,5 +130,6 @@ namespace BK_Tool
         private System.Windows.Forms.Button btnStart;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox txtLog;
+        private System.Windows.Forms.Button button2;
     }
 }

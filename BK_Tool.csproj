@@ -133,5 +133,8 @@
     <Content Include="lib\MySql.Data.dll" />
     <Content Include="lib\System.Data.SQLite.dll" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Tcp\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
